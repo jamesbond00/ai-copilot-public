@@ -127,3 +127,16 @@ Additional testing scenarios (mock server, UI automation, etc.) are documented i
 ## 📄 License
 
 MIT License – see [`LICENSE`](LICENSE) for details.
+
+---
+
+## ⚖️ Project Governance & Legal Disclaimer
+
+This repository is a **personal project** created for the sole purpose of educational exploration into AI-Native development patterns, Agentic Workflows, and LLM Orchestration.
+
+* **Independence:** This project is developed entirely in my personal capacity, on my own time, and using my own personal equipment. It is not affiliated with, sponsored by, or endorsed by any of my past or present employers.
+* **Intellectual Property:** All code, architectural designs, and logic within this repository have been authored from scratch or generated through interactions with public Generative AI tools (e.g., Cursor, Codex, Google Antigravity). No proprietary code, internal libraries, private data, or trade secrets from any professional employment were used in the creation of this project.
+* **Generic Domain:** While informed by two decades of experience in high-availability systems, the diagnostic patterns explored here are generic in nature and designed to apply to any distributed enterprise architecture.
+* **No Liability:** This software is provided "as is," without warranty of any kind. It is a sandbox for learning and should be treated as experimental.
+
+**License:** This project is licensed under the [MIT License](https://opensource.org/licenses/MIT) (or choose Apache 2.0) — see the LICENSE file for details.
