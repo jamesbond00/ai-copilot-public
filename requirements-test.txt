@@ -1,0 +1,24 @@
+# Testing dependencies for AI Copilot Dashboard
+
+# Core testing framework
+pytest>=7.4.0
+pytest-cov>=4.1.0
+pytest-mock>=3.11.0
+
+# UI automation testing (optional)
+selenium>=4.15.0
+webdriver-manager>=4.0.0
+
+# For headless browser testing (optional)
+pyvirtualdisplay>=3.0
+
+# HTTP testing
+httpx>=0.25.0
+requests>=2.31.0
+
+# Streamlit testing (if available)
+# streamlit-testing>=0.1.0  # Optional, may not be available - package doesn't exist
+
+# Additional testing utilities
+freezegun>=1.2.0  # For time-based testing
+factory-boy>=3.3.0  # For test data generation

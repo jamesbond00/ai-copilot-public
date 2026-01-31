@@ -1,0 +1,36 @@
+# Sample configuration for `scripts/log_pipeline_demo.py`
+# Copy to ~/.ai-copilot/config.yaml (create directories if needed)
+# and adjust paths/providers for your environment.
+
+preferred_provider: local
+fallback_provider: openai
+local_model: qwen2:1.5b
+openai_model: gpt-3.5-turbo
+ollama_host: http://localhost:11434
+enable_hybrid: true
+
+logs:
+  ingestion:
+    enabled: true
+    poll_interval_seconds: 60
+    max_events_per_poll: 500
+    sources:
+      - path: /var/log
+        include:
+          - "*.log"
+          - "syslog"
+        exclude:
+          - "*debug*"
+        parser: basic_text
+        batch_size: 200
+      - path: /Users/alex/ai-copilot/logs/app.log
+        include:
+          - "app.log"
+        parser: basic_text
+        batch_size: 100
+  analyzer:
+    provider: local
+    prompt_template: log_summary_v1
+    max_events: 200
+    anomaly_threshold: medium
+    include_raw_lines: false

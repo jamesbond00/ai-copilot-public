@@ -1,0 +1,246 @@
+<!DOCTYPE html>
+<html lang='en'>
+<head>
+  <meta charset='utf-8'>
+  <title>AI Copilot Technical Documentation</title>
+  <style>
+    body { font-family: Arial, sans-serif; margin: 40px; line-height: 1.6; color: #1f2933; }
+    h1, h2, h3, h4 { color: #111827; }
+    pre { background: #f5f5f5; padding: 12px; overflow-x: auto; }
+    code { font-family: "SFMono-Regular", Consolas, "Liberation Mono", Menlo, Courier, monospace; }
+    table { border-collapse: collapse; width: 100%; margin: 16px 0; }
+    th, td { border: 1px solid #d2d6dc; padding: 8px; text-align: left; }
+    blockquote { border-left: 4px solid #d2d6dc; padding-left: 16px; color: #4a5568; margin-left: 0; }
+    ul { padding-left: 1.4rem; }
+    li { margin-bottom: 4px; }
+    .container { max-width: 960px; margin: 0 auto; }
+  </style>
+</head>
+<body>
+  <div class='container'>
+    <h1>AI Copilot Technical Documentation</h1>
+<h2>Overview</h2>
+<p>AI Copilot helps SRE and platform teams synthesize monitoring signals into clear, actionable
+summaries. It ingests logs and metrics from common observability stacks, analyses the data with
+LLM-powered agents, and surfaces the results via REST APIs and a Streamlit dashboard.</p>
+<p><strong>Key capabilities</strong>
+- Unified fetcher interface for ELK, Prometheus, and Splunk
+- Cloud, local, and hybrid LLM analyzers with consistent result schema
+- FastAPI service exposing health checks, summaries, and targeted investigations
+- Streamlit dashboard for exploration, quick actions, and trend visualization
+- Pytest-backed suite with mock server to validate UI and integration flows</p>
+<h2>Architecture at a Glance</h2>
+<pre><code>┌────────────────────────────────────────────────────────────────────────────┐
+│                        AI Copilot End-to-End Flow                           │
+├───────────────┬───────────────────────┬───────────────────────┬────────────┤
+│  Monitoring   │   Data Connectors     │   LLM Analyzers        │  Surfaces  │
+│  Systems      │   (`src/data/`)       │   (`src/llm/`)         │            │
+├───────────────┼───────────────────────┼───────────────────────┼────────────┤
+│ • ELK         │ • `create_fetcher()`  │ • OpenAI (`LogAnalyzer`)│ • FastAPI │
+│ • Prometheus  │   returns provider-   │ • Local (`LocalLogAnalyzer`)
+│ • Splunk      │   specific fetchers   │ • Hybrid (`HybridLogAnalyzer`)
+├───────────────┼───────────────────────┼───────────────────────┼────────────┤
+│ Logs &amp;        │   Normalized `LogEntry` objects               │ Streamlit │
+│ metrics feed  └───────────────┬───────────────────────────────┴────────────┘
+│ into API                      │
+├───────────────┐              ▼
+│ External or   │      FastAPI service (`src/api/main.py`)
+│ dashboard     │      • Dependency-injected `CopilotService`
+│ clients call  │      • `/health`, `/summary/daily`, `/analysis/*`
+│ endpoints     │      • Config-driven analyzer creation
+└───────────────┘              │
+                               ▼
+                       Streamlit dashboard (`src/ui/dashboard.py`)
+                       • Calls API via REST wrapper
+                       • Renders insights, recommendations, metrics
+</code></pre>
+<h2>Codebase Layout</h2>
+<p>The top-level <code>README.md</code> summarizes quick-start tasks. This document deep-dives into the
+modules that power the assistant:</p>
+<ul>
+<li><code>src/api/main.py</code> – FastAPI entrypoint with dependency-injected <code>CopilotService</code></li>
+<li><code>src/data/fetchers.py</code> – ELK, Prometheus, and Splunk connectors sharing a common <code>LogEntry</code></li>
+<li><code>src/llm/</code> – Analyzer infrastructure, configuration utilities, and local LLM helpers</li>
+<li><code>src/ui/dashboard.py</code> – Streamlit experience for analysts and on-call engineers</li>
+<li><code>tests/</code> – Pytest suite (unit, UI, and integration) plus <code>mock_api_server.py</code> harness</li>
+<li><code>LOCAL_LLM_SETUP.md</code>, <code>SECURITY.md</code>, <code>TESTING.md</code> – supporting operational guides</li>
+</ul>
+<h2>Runtime Data Flow</h2>
+<ol>
+<li><strong>Source selection</strong> – Environment variables choose a monitoring backend (<code>MONITORING_SYSTEM</code>).</li>
+<li><strong>Fetcher provisioning</strong> – <code>create_fetcher()</code> builds the ELK/Prometheus/Splunk client and
+   normalizes provider responses into <code>LogEntry</code> dataclasses.</li>
+<li><strong>Analysis routing</strong> – <code>CopilotService</code> delegates to the configured analyzer (OpenAI, local
+   Ollama model, or hybrid) using <code>src/llm/config.py</code> preferences.</li>
+<li><strong>Insight packaging</strong> – analyzers return structured summaries (<code>summary</code>, <code>key_insights</code>,
+   <code>recommendations</code>, <code>confidence_score</code>, timestamps, and log counts).</li>
+<li><strong>Surface delivery</strong> – FastAPI endpoints serialize results for REST clients, and the Streamlit
+   dashboard renders them with Plotly charts and quick action panels.</li>
+</ol>
+<h2>Service Layers</h2>
+<h3>FastAPI service (<code>src/api/main.py</code>)</h3>
+<ul>
+<li>Lazy-initializes <code>CopilotService</code> via dependency injection to avoid start-up failures when
+  configuration is missing.</li>
+<li>Exposes <code>GET /</code>, <code>GET /health</code>, <code>POST /analyze</code>, <code>GET /summary/daily</code>, and scoped analysis
+  endpoints for errors and performance.</li>
+<li>Converts HTTP requests into time windows, pulls logs via the active fetcher, and formats
+  analyzer output into <code>AnalysisResponse</code> Pydantic models.</li>
+<li>Uses <code>python-dotenv</code> for local <code>.env</code> loading and <code>CORSMiddleware</code> for dashboard access.</li>
+</ul>
+<h3>Data connectors (<code>src/data/fetchers.py</code>)</h3>
+<ul>
+<li><code>LogEntry</code> dataclass unifies log shape across providers.</li>
+<li><code>ELKFetcher</code> posts range queries to Elasticsearch indices, extracting metadata and normalizing
+  log levels.</li>
+<li><code>PrometheusFetcher</code> converts time-series data (<code>query_range</code>) into pseudo-log events for trend
+  analysis.</li>
+<li><code>SplunkFetcher</code> streams exported search results, supports token-based auth, and enriches
+  metadata.</li>
+<li><code>_safe_request()</code> centralizes HTTP error handling with timeouts to keep API responses resilient.</li>
+</ul>
+<h3>Analyzer stack (<code>src/llm/</code>)</h3>
+<ul>
+<li><code>LogAnalyzer</code> (OpenAI) wraps <code>openai.OpenAI</code> chat completions with a monitoring-focused system
+  prompt and parsing helpers.</li>
+<li><code>LocalLogAnalyzer</code> drives Ollama models, validates availability, and adapts parsing for less
+  structured responses.</li>
+<li><code>HybridLogAnalyzer</code> chooses between local and OpenAI analyzers, supporting manual overrides
+  (<code>force_local</code> / <code>force_openai</code>).</li>
+<li><code>config.py</code> persists analyzer preferences in <code>~/.ai-copilot/config.yaml</code> or environment
+  variables, providing <code>validate_config()</code> for readiness checks.</li>
+<li><code>create_copilot_service()</code> factories bundle fetchers with analyzers for notebooks or external
+  services.</li>
+</ul>
+<h3>Streamlit dashboard (<code>src/ui/dashboard.py</code>)</h3>
+<ul>
+<li>Client-side utility <code>call_api()</code> hits the FastAPI endpoints and handles failures gracefully.</li>
+<li>Provides configurable time ranges and analysis types, displays insights, recommendations, and a
+  Plotly gauge for confidence scores.</li>
+<li>Offers quick-action buttons for common analyses and expands health status using <code>/health</code>.</li>
+<li>Designed to run alongside <code>uvicorn</code> for interactive inspection.</li>
+</ul>
+<h2>Environment Setup</h2>
+<ol>
+<li><strong>Create a virtual environment</strong>
+   <code>bash
+   python -m venv venv
+   source venv/bin/activate</code></li>
+<li><strong>Install runtime dependencies</strong>
+   <code>bash
+   pip install -r requirements.txt</code></li>
+<li><strong>Install development tooling</strong>
+   <code>bash
+   pip install -e ".[dev]"</code></li>
+<li><strong>Populate environment variables</strong> – copy and edit <code>.env.example</code>; key variables include
+   <code>OPENAI_API_KEY</code>, <code>MONITORING_SYSTEM</code>, <code>ELASTICSEARCH_URL</code>, <code>PROMETHEUS_URL</code>, <code>SPLUNK_URL</code>, and
+   provider-specific tokens.</li>
+</ol>
+<h2>Running the Stack</h2>
+<ul>
+<li><strong>API</strong> – <code>uvicorn src.api.main:app --reload</code></li>
+<li><strong>Dashboard</strong> – <code>streamlit run src/ui/dashboard.py</code> (ensure the API is reachable)</li>
+<li><strong>Mock backend for UI iteration</strong> – <code>python -m tests.mock_api_server</code> (serves realistic dummy
+  payloads on port 8001)</li>
+<li><strong>Jupyter experiments</strong> – notebooks live under <code>notebooks/</code>; launch with <code>jupyter lab</code> inside the
+  activated environment.</li>
+</ul>
+<h2>API Usage</h2>
+<table>
+<thead>
+<tr>
+<th>Endpoint</th>
+<th>Method</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>/</code></td>
+<td>GET</td>
+<td>Basic service liveness message</td>
+</tr>
+<tr>
+<td><code>/health</code></td>
+<td>GET</td>
+<td>Verifies monitoring connectivity via <code>test_connection()</code></td>
+</tr>
+<tr>
+<td><code>/analyze</code></td>
+<td>POST</td>
+<td>Ad-hoc analysis; accepts <code>analysis_type</code>, <code>time_range_hours</code>, <code>system_type</code></td>
+</tr>
+<tr>
+<td><code>/summary/daily</code></td>
+<td>GET</td>
+<td>Daily roll-up; <code>days_back</code> query param</td>
+</tr>
+<tr>
+<td><code>/analysis/errors</code></td>
+<td>GET</td>
+<td>Focused error investigation; <code>hours_back</code> query param</td>
+</tr>
+<tr>
+<td><code>/analysis/performance</code></td>
+<td>GET</td>
+<td>Performance insight; <code>hours_back</code> query param</td>
+</tr>
+</tbody>
+</table>
+<p>Example request:</p>
+<pre><code class="language-bash">curl -X POST http://localhost:8000/analyze \
+  -H &quot;Content-Type: application/json&quot; \
+  -d '{&quot;analysis_type&quot;: &quot;error_analysis&quot;, &quot;time_range_hours&quot;: 12, &quot;system_type&quot;: &quot;elk&quot;}'
+</code></pre>
+<p>Responses follow the <code>AnalysisResponse</code> schema with <code>summary</code>, <code>key_insights</code>, <code>recommendations</code>,
+<code>confidence_score</code>, <code>analysis_timestamp</code>, and <code>log_count</code> fields.</p>
+<h2>Local &amp; Hybrid LLM Configuration</h2>
+<ul>
+<li>Follow <code>LOCAL_LLM_SETUP.md</code> for Ollama installation, model downloads, and troubleshooting.</li>
+<li>Use environment variables or <code>~/.ai-copilot/config.yaml</code> to switch providers:</li>
+<li><code>AI_COPILOT_PROVIDER</code> = <code>local</code> | <code>openai</code> | <code>hybrid</code></li>
+<li><code>AI_COPILOT_LOCAL_MODEL</code> for Ollama model tags (e.g., <code>qwen2:1.5b</code>)</li>
+<li><code>AI_COPILOT_ENABLE_HYBRID=true</code> to allow automatic fallbacks</li>
+<li><code>hello_llm_local.py</code> offers a realistic sample workload for validating local inference before
+  wiring it into the API.</li>
+</ul>
+<h2>Testing &amp; Quality Assurance</h2>
+<ul>
+<li>Run the full suite with <code>pytest</code> (default target discovers tests under <code>tests/</code>).</li>
+<li>UI-specific tests (<code>tests/test_dashboard_ui.py</code>, <code>tests/test_dashboard_integration.py</code>) exercise
+  dashboard behaviors using the mock API server and Streamlit components.</li>
+<li><code>tests/test_fetchers.py</code> validates connector factories and dataclass behavior without hitting live
+  services.</li>
+<li>Prefer adding new fixtures or mocked responses in <code>tests/mock_api_server.py</code> when backend
+  contracts change.</li>
+<li>Format code with <code>black .</code> and lint with <code>flake8</code> before proposing changes.</li>
+</ul>
+<h2>Security &amp; Compliance</h2>
+<ul>
+<li>Review <code>SECURITY.md</code> and run <code>./security-check.sh</code> when introducing endpoints or dependencies.</li>
+<li>Keep secrets out of source control; document new variables in <code>.env.example</code> and reference them in
+  this documentation as needed.</li>
+<li>For hardened deployments, install <code>requirements-secure.txt</code> and audit third-party services accessed
+  by fetchers.</li>
+</ul>
+<h2>Contribution Workflow</h2>
+<ul>
+<li>Follow the style and testing guidance in <code>AGENTS.md</code>.</li>
+<li>Use feature branches, keep commit subjects imperative, and separate refactors from behavioral
+  changes.</li>
+<li>Include Pytest output in PR descriptions and attach dashboard screenshots or GIFs for UI updates.</li>
+<li>When changing monitoring integrations, update this documentation alongside relevant setup guides.</li>
+</ul>
+<h2>Additional Resources</h2>
+<ul>
+<li><code>DE_RISKING_ARCHITECTURE.md</code> &amp; <code>DE_RISKING_HALLUCINATIONS.md</code> – risk mitigation strategies for the
+  AI layer.</li>
+<li><code>LINEAR_INTEGRATION.md</code> – outlines backlog synchronization with Linear.</li>
+<li><code>TESTING.md</code> – canonical test plans and coverage expectations.</li>
+<li><code>wiki-setup.md</code> – instructions for mirroring documentation to internal wikis.</li>
+</ul>
+<p>Maintaining this document alongside the codebase ensures onboarding, audits, and incident response
+remain fast as the AI Copilot evolves.</p>
+  </div>
+</body>
+</html>
