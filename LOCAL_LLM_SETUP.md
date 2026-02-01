@@ -141,8 +141,9 @@ result = service.get_daily_summary()
 |-------|------|--------------|-------|---------|
 | `qwen2:1.5b` | ~1GB | 8GB+ | Fast | Good |
 | `qwen2:3b` | ~2GB | 12GB+ | Medium | Better |
+| `mistral-nemo` | ~8GB | 16GB+ | Medium | Excellent (Nvidia) |
 | `llama3:8b` | ~5GB | 16GB+ | Medium | Excellent |
-| `llama3:70b` | ~40GB | 64GB+ | Slow | Best |
+| `llama3.1-nemotron:70b` | ~40GB | 64GB+ | Slow | Best (Nvidia) |
 
 ### Download Commands
 
@@ -152,10 +153,11 @@ ollama pull qwen2:1.5b
 ollama pull qwen2:3b
 
 # Medium models
+ollama pull mistral-nemo  # Nvidia/Mistral collaboration
 ollama pull llama3:8b
-ollama pull mistral:7b
 
 # Large models (if you have enough RAM)
+ollama pull llama3.1-nemotron:70b  # Nvidia Nemotron
 ollama pull llama3:70b
 ollama pull codellama:34b
 ```

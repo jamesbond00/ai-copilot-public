@@ -16,7 +16,7 @@ class ModelConfig:
     """Configuration for a specific model."""
     name: str
     provider: str  # "local" or "openai"
-    model_id: str  # e.g., "qwen2:1.5b", "gpt-3.5-turbo"
+    model_id: str  # e.g., "qwen2:1.5b", "mistral-nemo", "gpt-3.5-turbo"
     temperature: float = 0.3
     max_tokens: int = 1000
     host: Optional[str] = None  # For local models
@@ -28,7 +28,7 @@ class AnalyzerConfig:
     """Configuration for the analyzer system."""
     preferred_provider: str = "local"  # "local" or "openai"
     fallback_provider: str = "openai"
-    local_model: str = "qwen2:1.5b"
+    local_model: str = "qwen2:1.5b"  # Can also use "mistral-nemo" or "llama3.1-nemotron:70b"
     openai_model: str = "gpt-3.5-turbo"
     openai_api_key: Optional[str] = None
     ollama_host: str = "http://localhost:11434"
