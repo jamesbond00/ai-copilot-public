@@ -18,29 +18,6 @@ The industry is shifting from dashboard-heavy platforms to AI-driven interpretat
 - **Lightweight On-prem Option**: Run entirely locally (e.g., Qwen2) for data privacy and speed.
 - **Seamless Integrations**: Native support for ServiceNow, Slack, and standard log pipelines.
 
-### 🏗 Architecture Overview
-
-The system follows an agentic loop designed for high-fidelity diagnostics:
-
-```mermaid
-graph LR
-    subgraph "Data Input"
-    Logs[System Logs]
-    Metric[Metrics]
-    end
-
-    subgraph "Agentic Brain"
-    Agent[Orchestrator]
-    LLM[LLM Reasoning]
-    Tool[Diagnostic Tools]
-    end
-
-    Logs --> Agent
-    Metric --> Agent
-    Agent <--> LLM
-    Agent <--> Tool
-    LLM --> Result[Explainable Diagnosis]
-
 ### ⚠️ The Problem
 Enterprises face **alert overload**, fragmented tools, and long Mean Time To Resolution (MTTR). This project prototypes a solution that combines high intelligence with simple deployment to reduce noise and automate root cause analysis.
 
