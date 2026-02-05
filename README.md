@@ -32,6 +32,84 @@ Enterprises face **alert overload**, fragmented tools, and long Mean Time To Res
 
 ---
 
+## 🧠 SED Architecture — Current State + Next Step
+
+### 🟢 Current Architecture (what exists today)
+
+```mermaid
+graph TD
+    U[Dev / SRE / Support] --> UI[Streamlit UI / API / CLI]
+
+    UI --> API[FastAPI Backend]
+
+    API --> ING[Event Ingestion Layer]
+    ING --> LOGS[Logs]
+    ING --> METRICS[Metrics]
+    ING --> TRACES[Traces]
+
+    ING --> CORR[Event Correlation & Enrichment]
+    CORR --> REDUCE[Noise Reduction / Signal Focus]
+
+    REDUCE --> LLM[LLM Diagnostics Layer]
+
+    subgraph "LLM Diagnostics"
+        LLM --> AA[Anchored Analyzer]
+        AA --> TPL[Incident Templates]
+        AA --> RULES[Category & Matching Heuristics]
+        AA --> MODELS[Local LLM (Qwen2) / Hybrid OpenAI]
+    end
+
+    LLM --> OUT[Explainable Diagnosis]
+    OUT --> UI
+```
+
+**What this captures accurately:**
+- **Cross-domain ingestion** (logs / metrics / traces)
+- **Correlation before LLMs** (critical, and rare)
+- **Template-anchored reasoning** to de-risk hallucinations
+- **Local-first LLM** with hybrid fallback
+- **Human-facing explanation layer**
+
+This already puts SED ahead of many “AI Ops” demos.
+
+### 🔵 Planned Evolution — Agentic Orchestration Layer
+
+This sits on top of your existing engine, not replacing it.
+
+```mermaid
+graph TD
+    U[User / Incident Trigger] --> ORCH{Agent Orchestrator}
+
+    ORCH --> SME[SME Agent<br/>Reasoning & Synthesis]
+
+    SME --> SED[SED Core Engine]
+    SED --> ING[Ingestion]
+    SED --> CORR[Correlation]
+    SED --> LLM[Anchored LLM Diagnosis]
+
+    SME --> TOOLS[System Tools]
+    TOOLS --> REPO[Git / Code Repos]
+    TOOLS --> TICKETS[Jira / Linear]
+    TOOLS --> DOCS[Confluence / Docs]
+    TOOLS --> ENV[Env State<br/>Prod vs UAT]
+    TOOLS --> SBX[Sandbox / Replay<br/>(optional)]
+
+    SME --> OUT[Root Cause + Evidence]
+
+    ORCH --> SUP[Support Agent]
+    ORCH --> OPS[Ops Agent]
+    ORCH --> CUST[Explanation Agent]
+
+    OUT --> SUP
+    OUT --> OPS
+    OUT --> CUST
+```
+
+> SED today provides an AI-native, explainable diagnostics engine built around anchored LLM reasoning and local-first deployment.
+> The next planned evolution is an agentic orchestration layer, where a central SME agent coordinates diagnostics, environment context, and system tools to perform first-pass root cause analysis. This allows downstream agents (support, ops, customer-facing) to act on a shared, evidence-backed explanation rather than raw alerts or logs.
+
+---
+
 ## 🛠️ Technical Architecture & Developer Guide
 
 This repository contains the reference implementation of the SED Engine. It ships with a local Qwen2 workflow, hybrid OpenAI fallback, a FastAPI backend, and Streamlit dashboards.
