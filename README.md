@@ -56,7 +56,7 @@ graph TD
         LLM --> AA[Anchored Analyzer]
         AA --> TPL[Incident Templates]
         AA --> RULES[Category & Matching Heuristics]
-        AA --> MODELS[Local LLM \(Qwen2\) / Hybrid OpenAI]
+        AA --> MODELS[Local LLM Qwen2 / Hybrid OpenAI]
     end
 
     LLM --> OUT[Explainable Diagnosis]
@@ -92,7 +92,7 @@ graph TD
     TOOLS --> TICKETS[Jira / Linear]
     TOOLS --> DOCS[Confluence / Docs]
     TOOLS --> ENV[Env State<br/>Prod vs UAT]
-    TOOLS --> SBX[Sandbox / Replay<br/>\(optional\)]
+    TOOLS --> SBX[Sandbox / Replay - Optional]
 
     SME --> OUT[Root Cause + Evidence]
 
