@@ -1,38 +1,72 @@
-# Repository Guidelines
+# Agentic Orchestration Layer (Alpha)
 
-## Project Structure & Module Organization
-- `src/api/main.py`: FastAPI entrypoint serving dashboards and external agents.
-- `src/data/`: fetchers and connectors; keep new data clients colocated here.
-- `src/llm/`: prompt tooling, analyzers, and incident templates used across surfaces.
-- `src/ui/`: Streamlit dashboard and future workspace-facing views.
-- `tests/`: canonical unit and integration suites; retire legacy root-level `test_*.py` files when touched.
+The Agentic Orchestration Layer introduces autonomous agents to the System Diagnostics Copilot. Instead of just analyzing logs upon request, these agents can coordinate, reason like an SME (Subject Matter Expert), and use specialized tools to diagnose complex issues.
 
-## Build, Test, and Development Commands
-- `python -m venv venv && source venv/bin/activate`: set up an isolated interpreter.
-- `pip install -r requirements.txt`: install runtime packages for the copilot services.
-- `pip install -e ".[dev]"`: add Black, Pytest, and lint tooling for local development.
-- `uvicorn src.api.main:app --reload`: run the API with hot reload.
-- `streamlit run src/ui/dashboard.py`: launch the dashboard; pair with the API for end-to-end checks.
+## 🏗️ Architecture
 
-## Coding Style & Naming Conventions
-- Target Python 3.11+, annotate public surfaces, and prefer dataclasses for structured payloads.
-- Format with Black (`black .`); it enforces 88-character lines and normalized imports.
-- Keep functions and modules in snake_case, classes in PascalCase, and constants in UPPER_CASE.
-- Run `flake8` before review to catch unused imports and complexity spikes.
+The system uses a hierarchical agent pattern:
 
-## Testing Guidelines
-- Use Pytest; files follow `test_*.py`, classes `Test*`, and functions `test_*` per `pyproject.toml`.
-- `pytest` runs the entire suite; scope to `pytest tests/test_dashboard_ui.py -k smoke` when iterating UI logic.
-- Add fixtures or mocks in `tests/mock_api_server.py` when backend contracts shift.
-- Expect green tests and comparable coverage with every pull request.
+```mermaid
+graph TD
+    User[User Request] --> Orchestrator[Agent Orchestrator]
+    
+    Orchestrator -->|Complexity?| SME[SME Agent]
+    Orchestrator -->|Simple?| Direct[Direct Response]
+    
+    subgraph "Specialist Layer"
+        SME -->|Need Logs| LogAgent[Log Analysis Agent]
+        SME -->|Need Metrics| MetricAgent[Metric Agent (Planned)]
+        SME -->|Need Traces| TraceAgent[Trace Agent (Planned)]
+    end
+    
+    LogAgent -->|Analyze| LocalLLM[Local/Hybrid LLM]
+    LogAgent -->|Fetch| Logs[Log Sources]
+    
+    SME -->|Synthesize| Report[Diagnostic Report]
+```
 
-## Commit & Pull Request Guidelines
-- Write imperative, one-line commit subjects (e.g., `Implement log fetcher module`); include detail in the body when needed.
-- Group refactors and functional changes separately to simplify review.
-- PRs must summarize intent, link issues or incidents, and attach screenshots/GIFs for UI updates.
-- Confirm local `pytest` output and call out configuration changes or follow-up tasks in the description.
+## 🤖 Core Agents
 
-## Security & Configuration Tips
-- Review `SECURITY.md` and `security-check.sh` before exposing new endpoints or dependencies.
-- Never commit secrets; document new environment variables in `.env.example` instead.
-- Use the `requirements-secure.txt` profile when validating hardened deployments.
+### 1. Agent Orchestrator (`src.agents.orchestrator`)
+**Role**: The "Front Desk" and Router.
+- Receives all user messages.
+- Analyzes intent (e.g., "Is this a greeting or a system outage?").
+- Routes complex diagnostic tasks to the SME Agent.
+- Handles simple queries directly.
+
+### 2. SME Agent (`src.agents.sme`)
+**Role**: The Subject Matter Expert (Site Reliability Engineer).
+- Receives diagnostic requests.
+- Formulates hypotheses (e.g., "If checkout is failing, I should check the payment gateway logs").
+- **Delegates** work to specialist agents (currently `LogAnalysisAgent`).
+- **Synthesizes** findings into a coherent Root Cause Analysis (RCA) report.
+
+### 3. Log Analysis Agent (`src.agents.log_agent`)
+**Role**: The Log Specialist.
+- Specialized in fetching and interpreting logs.
+- Uses `LocalLogAnalyzer` (Qwen2/Llama3) to scan logs for errors and patterns.
+- Returns structured insights (summary, error rates, confidence) to the SME Agent.
+
+## 🚀 Usage
+
+The agent layer is accessible via the `AgentOrchestrator` class.
+
+```python
+from src.agents.orchestrator import AgentOrchestrator
+
+# Initialize the orchestrator
+orchestrator = AgentOrchestrator(model="qwen2:1.5b")
+
+# Run a diagnostic request
+response = orchestrator.run("Checkout service is returning 500 errors")
+print(response)
+```
+
+See `scripts/demo_agent_orchestration.py` for a runnable example.
+
+## 🔮 Future Work
+
+- **Tool Use**: Give agents access to real tools (Jira, GitHub, Slack) via MCP or direct integration.
+- **More Specialists**: Add `MetricAgent` (Prometheus) and `TraceAgent` (Jaeger/Tempo).
+- **Memory**: Implement conversation history and context retention across turns.
+- **Planner**: Add a planning step for the SME Agent to decompose complex problems into parallel tasks.

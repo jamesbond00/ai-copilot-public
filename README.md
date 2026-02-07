@@ -72,9 +72,9 @@ graph TD
 
 This already puts SED ahead of many “AI Ops” demos.
 
-### 🔵 Planned Evolution — Agentic Orchestration Layer
+### 🔵 Agentic Orchestration Layer (Alpha)
 
-This sits on top of your existing engine, not replacing it.
+This sits on top of your existing engine, orchestrating diagnostics through autonomous agents.
 
 ```mermaid
 graph TD
@@ -105,8 +105,15 @@ graph TD
     OUT --> CUST
 ```
 
-> SED today provides an AI-native, explainable diagnostics engine built around anchored LLM reasoning and local-first deployment.
-> The next planned evolution is an agentic orchestration layer, where a central SME agent coordinates diagnostics, environment context, and system tools to perform first-pass root cause analysis. This allows downstream agents (support, ops, customer-facing) to act on a shared, evidence-backed explanation rather than raw alerts or logs.
+> **Status: Implemented (Alpha)**
+> The Agentic Orchestration Layer is now live! In this layer, a central **SME agent** coordinates diagnostics, environment context, and system tools to perform first-pass root cause analysis. This allows downstream agents (support, ops, customer-facing) to act on a shared, evidence-backed explanation rather than raw alerts or logs.
+>
+> **Available Agents:**
+> - **Agent Orchestrator**: The entry point that routes user intent to the right specialist.
+> - **SME Agent**: The "Lead Engineer" that plans diagnostics and synthesizes findings.
+> - **Log Analysis Agent**: A specialist tool that fetches and interprets logs using local LLMs.
+>
+> See [AGENTS.md](AGENTS.md) for architecture details and usage.
 
 ---
 
