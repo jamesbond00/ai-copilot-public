@@ -10,7 +10,8 @@ def test_base_agent_init():
     assert agent.name == "TestAgent"
     assert agent.role == "Tester"
 
-def test_orchestrator_routing():
+@patch("src.agents.log_agent.LocalLogAnalyzer")
+def test_orchestrator_routing(mock_analyzer):
     orch = AgentOrchestrator()
     # Mock the SME agent
     orch.sme_agent = MagicMock()
@@ -46,7 +47,8 @@ def test_log_agent_run(mock_analyzer):
     assert "No errors" in result
     mock_analyzer_instance.analyze_logs.assert_called()
 
-def test_sme_agent_flow():
+@patch("src.agents.log_agent.LocalLogAnalyzer")
+def test_sme_agent_flow(mock_analyzer):
     sme = SMEAgent()
     # Mock Log Agent
     sme.log_agent = MagicMock()
