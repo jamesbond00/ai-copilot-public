@@ -15,8 +15,8 @@ graph TD
     
     subgraph "Specialist Layer"
         SME -->|Need Logs| LogAgent[Log Analysis Agent]
-        SME -->|Need Metrics| MetricAgent[Metric Agent (Planned)]
-        SME -->|Need Traces| TraceAgent[Trace Agent (Planned)]
+        SME -->|Need Metrics| MetricAgent["Metric Agent (Planned)"]
+        SME -->|Need Traces| TraceAgent["Trace Agent (Planned)"]
     end
     
     LogAgent -->|Analyze| LocalLLM[Local/Hybrid LLM]
