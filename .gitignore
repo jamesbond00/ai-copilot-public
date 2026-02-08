@@ -152,3 +152,11 @@ data/
 *.db
 *.sqlite
 **/__pycache__/*.pyc
+chroma_db_demo/*/*.bin
+chroma_db_demo/*.sqlite*
+
+demo_output.txt
+
+# ChromaDB
+chroma_db/
+chroma_db_demo/
