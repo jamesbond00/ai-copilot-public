@@ -28,6 +28,7 @@ Enterprises face **alert overload**, fragmented tools, and long Mean Time To Res
 - **Predictive Analytics**: Anticipate issues before they cause outages.
 - **Automation Workflows**: Trigger remediations or actionable alerts automatically.
 - **Explainable Diagnostics**: Template-anchored reasoning (see `src/llm/anchored_analyzer.py`) prevents hallucinations.
+- **Knowledge Base (RAG)**: Vector-aided retrieval for retrieving wiki docs, runbooks, and past incidents.
 - **On‐prem / Hybrid Deployment**: Flexible hosting models to suit security needs.
 
 ---
@@ -133,6 +134,7 @@ ai-copilot/
 │   │   ├── local_analyzer.py      # Local + hybrid analyzers
 │   │   ├── incident_templates.py  # Predefined incident registry
 │   │   └── copilot.py             # Factory + service wiring
+│   ├── knowledge/          # RAG & Knowledge Base (ChromaDB)
 │   └── ui/                # Streamlit dashboards
 ├── tests/                 # Pytest suites (dashboard, integrations, etc.)
 ├── example_anchored_monitoring.py # End-to-end anchored demo
@@ -179,6 +181,7 @@ ollama pull qwen2:1.5b         # Lightweight model used across examples
 | Spin up FastAPI service | `uvicorn src.api.main:app --reload` |
 | Launch Streamlit dashboard | `streamlit run src/ui/dashboard.py` |
 | Hybrid analyzer via factory | See `create_analyzer` in `src/llm/copilot.py` |
+| Run Knowledge Base demo (RAG) | `python scripts/demo_knowledge_base.py` |
 
 ## ✅ Testing & Quality
 

@@ -22,6 +22,9 @@ graph TD
     LogAgent -->|Analyze| LocalLLM[Local/Hybrid LLM]
     LogAgent -->|Fetch| Logs[Log Sources]
     
+    SME -->|Query| KB[Knowledge Base (RAG)]
+    KB -->|Retrieve| Wiki[Wiki / Jira / Runbooks]
+
     SME -->|Synthesize| Report[Diagnostic Report]
 ```
 
@@ -46,6 +49,12 @@ graph TD
 - Specialized in fetching and interpreting logs.
 - Uses `LocalLogAnalyzer` (Qwen2/Llama3) to scan logs for errors and patterns.
 - Returns structured insights (summary, error rates, confidence) to the SME Agent.
+
+### 4. Knowledge Base (`src.knowledge.knowledge_base`)
+**Role**: The Institutional Memory.
+- Stores and retrieves documents using Vector RAG (ChromaDB).
+- Agents can query this to find past incidents, runbooks, and architectural docs.
+- See `scripts/demo_knowledge_base.py` for usage.
 
 ## 🚀 Usage
 
