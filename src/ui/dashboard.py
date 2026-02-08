@@ -6,6 +6,7 @@ import streamlit as st
 import requests
 import json
 from datetime import datetime, timedelta
+import os
 import pandas as pd
 import plotly.express as px
 import plotly.graph_objects as go
@@ -19,7 +20,7 @@ st.set_page_config(
 )
 
 # API configuration
-API_BASE_URL = "http://localhost:8000"
+API_BASE_URL = os.getenv("API_URL", "http://localhost:8000")
 
 
 def call_api(endpoint: str, params: dict = None) -> dict:
