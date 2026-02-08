@@ -22,7 +22,7 @@ graph TD
     LogAgent -->|Analyze| LocalLLM[Local/Hybrid LLM]
     LogAgent -->|Fetch| Logs[Log Sources]
     
-    SME -->|Query| KB[Knowledge Base (RAG)]
+    SME -->|Query| KB["Knowledge Base (RAG)"]
     KB -->|Retrieve| Wiki[Wiki / Jira / Runbooks]
 
     SME -->|Synthesize| Report[Diagnostic Report]
