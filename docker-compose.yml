@@ -1,0 +1,55 @@
+version: '3.8'
+
+services:
+  backend:
+    build: .
+    container_name: sed-backend
+    command: uvicorn src.api.main:app --host 0.0.0.0 --port 8000
+    volumes:
+      - .:/app
+      - chroma_data:/app/chroma_db
+    ports:
+      - "8000:8000"
+    environment:
+      - MONITORING_SYSTEM=${MONITORING_SYSTEM:-elk}
+      - OPENAI_API_KEY=${OPENAI_API_KEY}
+      - ELASTICSEARCH_URL=${ELASTICSEARCH_URL}
+      - PROMETHEUS_URL=${PROMETHEUS_URL}
+      - SPLUNK_URL=${SPLUNK_URL}
+      - SPLUNK_TOKEN=${SPLUNK_TOKEN}
+      - OLLAMA_HOST=${OLLAMA_HOST:-http://host.docker.internal:11434} # Access local ollama if running on host
+    depends_on:
+      - ollama
+
+  frontend:
+    build: .
+    container_name: sed-frontend
+    command: streamlit run src/ui/dashboard.py
+    volumes:
+      - .:/app
+    ports:
+      - "8501:8501"
+    environment:
+      - API_URL=http://backend:8000
+    depends_on:
+      - backend
+
+  ollama:
+    image: ollama/ollama:latest
+    container_name: sed-ollama
+    ports:
+      - "11434:11434"
+    volumes:
+      - ollama_data:/root/.ollama
+    # Uncomment the following lines to enable GPU support (requires NVIDIA Container Toolkit)
+    # deploy:
+    #   resources:
+    #     reservations:
+    #       devices:
+    #         - driver: nvidia
+    #           count: 1
+    #           capabilities: [gpu]
+
+volumes:
+  chroma_data:
+  ollama_data:

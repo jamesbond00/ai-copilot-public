@@ -168,8 +168,33 @@ pip install -e ".[dev]"        # Optional: formatter, linters, pytest plugins
 ```bash
 brew install ollama            # macOS via Homebrew
 brew services start ollama
+brew services start ollama
 ollama pull qwen2:1.5b         # Lightweight model used across examples
 ```
+
+## 🐳 Deployment (Docker)
+
+To deploy SED on a Linux box or any Docker-enabled environment:
+
+1.  **Configure Environment**:
+    ```bash
+    cp .env.example .env
+    # Edit .env with your monitoring system details (Splunk/ELK/Prometheus)
+    ```
+
+2.  **Start Services**:
+    ```bash
+    docker-compose up -d
+    ```
+
+3.  **Access the Dashboard**:
+    Open `http://localhost:8501` in your browser.
+
+4.  **Backend API**:
+    Available at `http://localhost:8000`.
+
+> **Note**: The `ollama` service in `docker-compose.yml` runs on CPU by default. For GPU support, uncomment the deploy section in the compose file and ensure you have the NVIDIA Container Toolkit installed.
+
 
 ## 📚 Usage Recipes
 
