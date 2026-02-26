@@ -58,6 +58,30 @@ class AnalysisResponse(BaseModel):
     log_count: int
 
 
+class GenericEventPayload(BaseModel):
+    """Generic event payload for external system webhooks."""
+    source_system: str  # e.g., "vector", "prometheus", "custom"
+    event_type: str  # e.g., "error", "warning", "info"
+    component: str  # e.g., "prod_sink", "api_gateway"
+    message: str  # Raw error/log message
+    timestamp: Optional[datetime] = None
+    severity: Optional[str] = "medium"  # critical, high, medium, low
+    metadata: Optional[Dict[str, Any]] = None  # Additional context
+    tags: Optional[Dict[str, str]] = None  # Key-value tags
+
+
+class WebhookEventResponse(BaseModel):
+    """Response model for webhook events."""
+    event_id: str
+    status: str  # "received", "processed", "failed"
+    category: Optional[str] = None
+    severity: Optional[str] = None
+    summary: Optional[str] = None
+    next_step: Optional[str] = None
+    confidence: Optional[float] = None
+    processed_at: datetime
+
+
 def get_copilot_service() -> CopilotService:
     """Dependency to get the copilot service."""
     global copilot_service
@@ -214,6 +238,69 @@ async def analyze_performance(
     except Exception as e:
         logger.error(f"Performance analysis failed: {e}")
         raise HTTPException(status_code=500, detail=f"Performance analysis failed: {str(e)}")
+
+
+@app.post("/api/v1/events/webhook", response_model=WebhookEventResponse)
+async def receive_webhook_event(event: GenericEventPayload):
+    """
+    Generic webhook endpoint for external system events.
+    
+    This endpoint accepts events from any external system (Vector, Prometheus, etc.)
+    and normalizes them into SED's internal incident format.
+    """
+    try:
+        import uuid
+        from ..llm.incident_templates import IncidentAnalyzer
+        
+        # Generate unique event ID
+        event_id = str(uuid.uuid4())
+        
+        # Use timestamp from event or current time
+        event_timestamp = event.timestamp or datetime.now()
+        
+        # Initialize incident analyzer
+        analyzer = IncidentAnalyzer()
+        
+        # Prepare metadata for analysis
+        analysis_metadata = {
+            "source_system": event.source_system,
+            "component": event.component,
+            "event_type": event.event_type,
+            "severity": event.severity,
+            **(event.metadata or {}),
+            **(event.tags or {})
+        }
+        
+        # Analyze the event using template matching
+        analysis_result = analyzer.analyze_incident(
+            log_message=event.message,
+            metadata=analysis_metadata,
+            service_name=f"{event.source_system}/{event.component}"
+        )
+        
+        logger.info(
+            f"Webhook event received: {event_id} from {event.source_system} "
+            f"component={event.component} category={analysis_result.get('category')}"
+        )
+        
+        return WebhookEventResponse(
+            event_id=event_id,
+            status="processed",
+            category=analysis_result.get("category"),
+            severity=analysis_result.get("severity"),
+            summary=analysis_result.get("summary"),
+            next_step=analysis_result.get("next_step"),
+            confidence=analysis_result.get("confidence"),
+            processed_at=datetime.now()
+        )
+        
+    except Exception as e:
+        logger.error(f"Webhook processing failed: {e}")
+        return WebhookEventResponse(
+            event_id=str(uuid.uuid4()),
+            status="failed",
+            processed_at=datetime.now()
+        )
 
 
 if __name__ == "__main__":

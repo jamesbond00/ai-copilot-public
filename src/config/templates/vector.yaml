@@ -1,0 +1,119 @@
+# Vector.dev Incident Templates
+# These templates extend SED's incident detection for Vector-specific issues
+
+templates:
+  - category: VECTOR_SINK_FAILURE
+    severity: high
+    summary_template: "🚨 Vector sink '{component}' failed with {error_code}"
+    cause_template: "Sink failure likely due to {cause_context} - check credentials and endpoint configuration"
+    next_step_template: "Verify sink credentials, check endpoint availability, review Vector issue {github_issue}"
+    keywords:
+      - "sink"
+      - "failed"
+      - "vector"
+      - "component"
+      - "error"
+    patterns:
+      - "sink.*failed"
+      - "component.*error"
+      - "error.*sink"
+      - "403.*forbidden"
+      - "401.*unauthorized"
+    metadata_fields:
+      - "error_code"
+      - "component"
+      - "sink_type"
+      - "endpoint"
+      - "github_issue"
+    
+  - category: VECTOR_SCHEMA_MISMATCH
+    severity: medium
+    summary_template: "🚨 Vector schema mismatch in '{component}' - {schema_error}"
+    cause_template: "Schema validation failed due to {cause_context} - check data format and sink expectations"
+    next_step_template: "Review schema definition, validate input data format, check Vector transform configuration"
+    keywords:
+      - "schema"
+      - "mismatch"
+      - "validation"
+      - "format"
+      - "type"
+    patterns:
+      - "schema.*mismatch"
+      - "validation.*failed"
+      - "type.*error"
+      - "format.*invalid"
+    metadata_fields:
+      - "schema_error"
+      - "expected_type"
+      - "actual_type"
+      - "component"
+      - "field_name"
+    
+  - category: VECTOR_COMPONENT_FAILURE
+    severity: high
+    summary_template: "🚨 Vector component '{component}' unhealthy - {failure_reason}"
+    cause_template: "Component failure likely due to {cause_context} - check component configuration and dependencies"
+    next_step_template: "Review component logs, verify configuration, restart Vector if necessary"
+    keywords:
+      - "component"
+      - "unhealthy"
+      - "failed"
+      - "error"
+      - "stopped"
+    patterns:
+      - "component.*unhealthy"
+      - "component.*failed"
+      - "component.*stopped"
+      - "health.*check.*failed"
+    metadata_fields:
+      - "component"
+      - "failure_reason"
+      - "component_type"
+      - "uptime"
+      - "restart_count"
+  
+  - category: VECTOR_BUFFER_OVERFLOW
+    severity: critical
+    summary_template: "🚨 Vector buffer overflow in '{component}' - {buffer_usage}% full"
+    cause_template: "Buffer overflow due to {cause_context} - downstream sink may be slow or unavailable"
+    next_step_template: "Check sink performance, increase buffer size, or add backpressure handling"
+    keywords:
+      - "buffer"
+      - "overflow"
+      - "full"
+      - "capacity"
+      - "backpressure"
+    patterns:
+      - "buffer.*overflow"
+      - "buffer.*full"
+      - "capacity.*exceeded"
+      - "backpressure"
+    metadata_fields:
+      - "buffer_usage"
+      - "buffer_size"
+      - "component"
+      - "events_dropped"
+      - "sink_latency"
+
+  - category: VECTOR_CREDENTIAL_ROTATION
+    severity: high
+    summary_template: "🚨 Vector credential rotation required for '{component}' - authentication failing"
+    cause_template: "Credentials expired or rotated - known issue in Vector #{github_issue}"
+    next_step_template: "Rotate credentials, update Vector config, restart affected components. See: {doc_link}"
+    keywords:
+      - "credential"
+      - "authentication"
+      - "forbidden"
+      - "unauthorized"
+      - "expired"
+    patterns:
+      - "403.*forbidden"
+      - "401.*unauthorized"
+      - "credential.*expired"
+      - "authentication.*failed"
+    metadata_fields:
+      - "error_code"
+      - "component"
+      - "github_issue"
+      - "doc_link"
+      - "last_success"

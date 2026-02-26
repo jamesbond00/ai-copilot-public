@@ -1,0 +1,271 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "SED Alert Schema",
+  "description": "Schema for SED alerts that includes raw error logs, inferred component failures, and contextual links",
+  "type": "object",
+  "required": [
+    "alert_id",
+    "timestamp",
+    "source_system",
+    "component",
+    "raw_error",
+    "analysis"
+  ],
+  "properties": {
+    "alert_id": {
+      "type": "string",
+      "description": "Unique identifier for this alert (UUID)",
+      "format": "uuid"
+    },
+    "timestamp": {
+      "type": "string",
+      "description": "ISO 8601 timestamp when the alert was generated",
+      "format": "date-time"
+    },
+    "source_system": {
+      "type": "string",
+      "description": "The system that generated the event (e.g., 'vector', 'prometheus', 'custom')",
+      "examples": ["vector", "prometheus", "kubernetes", "custom"]
+    },
+    "component": {
+      "type": "string",
+      "description": "The specific component that failed (e.g., 'prod_sink', 'api_gateway')"
+    },
+    "raw_error": {
+      "type": "object",
+      "description": "The original error log or event data",
+      "required": ["message"],
+      "properties": {
+        "message": {
+          "type": "string",
+          "description": "The raw error message"
+        },
+        "level": {
+          "type": "string",
+          "description": "Log level (ERROR, WARN, INFO, etc.)",
+          "enum": ["ERROR", "WARN", "INFO", "DEBUG", "CRITICAL"]
+        },
+        "metadata": {
+          "type": "object",
+          "description": "Additional metadata from the original event",
+          "additionalProperties": true
+        },
+        "tags": {
+          "type": "object",
+          "description": "Key-value tags associated with the event",
+          "additionalProperties": {
+            "type": "string"
+          }
+        }
+      }
+    },
+    "analysis": {
+      "type": "object",
+      "description": "SED's analysis of the error",
+      "required": ["category", "severity", "summary"],
+      "properties": {
+        "category": {
+          "type": "string",
+          "description": "The incident category determined by SED's template matching",
+          "examples": [
+            "VECTOR_SINK_FAILURE",
+            "VECTOR_CREDENTIAL_ROTATION",
+            "CPU_SATURATION",
+            "MEMORY_EXHAUSTION"
+          ]
+        },
+        "severity": {
+          "type": "string",
+          "description": "Severity level of the incident",
+          "enum": ["critical", "high", "medium", "low"]
+        },
+        "summary": {
+          "type": "string",
+          "description": "Human-readable summary of the incident"
+        },
+        "cause": {
+          "type": "string",
+          "description": "Inferred root cause of the failure"
+        },
+        "next_step": {
+          "type": "string",
+          "description": "Recommended next steps for remediation"
+        },
+        "confidence": {
+          "type": "number",
+          "description": "Confidence score of the analysis (0.0 to 1.0)",
+          "minimum": 0.0,
+          "maximum": 1.0
+        },
+        "template_used": {
+          "type": "string",
+          "description": "The incident template that was matched"
+        },
+        "alternative_categories": {
+          "type": "array",
+          "description": "Alternative categories that also matched",
+          "items": {
+            "type": "string"
+          }
+        }
+      }
+    },
+    "context": {
+      "type": "object",
+      "description": "Contextual information and links to documentation/issues",
+      "properties": {
+        "github_issue": {
+          "type": "object",
+          "description": "Related GitHub issue information",
+          "properties": {
+            "number": {
+              "type": "integer",
+              "description": "GitHub issue number"
+            },
+            "url": {
+              "type": "string",
+              "description": "Full URL to the GitHub issue",
+              "format": "uri"
+            },
+            "title": {
+              "type": "string",
+              "description": "Issue title"
+            },
+            "status": {
+              "type": "string",
+              "description": "Issue status (open, closed)",
+              "enum": ["open", "closed"]
+            }
+          }
+        },
+        "documentation": {
+          "type": "object",
+          "description": "Related documentation links",
+          "properties": {
+            "url": {
+              "type": "string",
+              "description": "URL to relevant documentation",
+              "format": "uri"
+            },
+            "title": {
+              "type": "string",
+              "description": "Documentation page title"
+            },
+            "section": {
+              "type": "string",
+              "description": "Specific section within the documentation"
+            }
+          }
+        },
+        "runbook": {
+          "type": "object",
+          "description": "Related runbook or playbook",
+          "properties": {
+            "url": {
+              "type": "string",
+              "description": "URL to the runbook",
+              "format": "uri"
+            },
+            "title": {
+              "type": "string",
+              "description": "Runbook title"
+            }
+          }
+        },
+        "similar_incidents": {
+          "type": "array",
+          "description": "Similar past incidents from SED's knowledge base",
+          "items": {
+            "type": "object",
+            "properties": {
+              "incident_id": {
+                "type": "string"
+              },
+              "timestamp": {
+                "type": "string",
+                "format": "date-time"
+              },
+              "similarity_score": {
+                "type": "number",
+                "minimum": 0.0,
+                "maximum": 1.0
+              },
+              "resolution": {
+                "type": "string",
+                "description": "How the incident was resolved"
+              }
+            }
+          }
+        }
+      }
+    },
+    "remediation": {
+      "type": "object",
+      "description": "Automated remediation actions (if applicable)",
+      "properties": {
+        "automated": {
+          "type": "boolean",
+          "description": "Whether automated remediation was triggered"
+        },
+        "actions_taken": {
+          "type": "array",
+          "description": "List of automated actions taken",
+          "items": {
+            "type": "string"
+          }
+        },
+        "manual_steps": {
+          "type": "array",
+          "description": "Manual steps required",
+          "items": {
+            "type": "string"
+          }
+        }
+      }
+    }
+  },
+  "examples": [
+    {
+      "alert_id": "550e8400-e29b-41d4-a716-446655440000",
+      "timestamp": "2026-02-08T21:15:00Z",
+      "source_system": "vector",
+      "component": "prod_sink",
+      "raw_error": {
+        "message": "Sink 'prod_sink' failed with HTTP 403 Forbidden",
+        "level": "ERROR",
+        "metadata": {
+          "error_code": "403",
+          "sink_type": "http",
+          "endpoint": "https://api.example.com/logs"
+        },
+        "tags": {
+          "host": "vector-prod-01",
+          "vector_version": "0.35.0"
+        }
+      },
+      "analysis": {
+        "category": "VECTOR_CREDENTIAL_ROTATION",
+        "severity": "high",
+        "summary": "🚨 Vector sink 'prod_sink' failed with 403",
+        "cause": "Credentials expired or rotated - known issue in Vector #8821",
+        "next_step": "Rotate credentials, update Vector config, restart affected components. See: https://vector.dev/docs/reference/configuration/sinks/http/",
+        "confidence": 0.92,
+        "template_used": "VECTOR_CREDENTIAL_ROTATION",
+        "alternative_categories": ["VECTOR_SINK_FAILURE", "AUTHENTICATION_FAILURES"]
+      },
+      "context": {
+        "github_issue": {
+          "number": 8821,
+          "url": "https://github.com/vectordotdev/vector/issues/8821",
+          "title": "HTTP sink fails after credential rotation",
+          "status": "closed"
+        },
+        "documentation": {
+          "url": "https://vector.dev/docs/reference/configuration/sinks/http/",
+          "title": "HTTP Sink Configuration",
+          "section": "Authentication"
+        }
+      }
+    }
+  ]
+}
