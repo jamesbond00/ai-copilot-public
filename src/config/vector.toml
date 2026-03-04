@@ -1,0 +1,78 @@
+# Vector.dev Configuration for SED Integration
+# This configuration sends Vector's internal telemetry to SED for monitoring
+
+# Vector's internal logs source
+[sources.internal_logs]
+type = "internal_logs"
+
+# Vector's internal metrics source
+[sources.internal_metrics]
+type = "internal_metrics"
+
+# Transform internal logs to SED's generic event schema
+[transforms.sed_format_logs]
+type = "remap"
+inputs = ["internal_logs"]
+source = '''
+  .source_system = "vector"
+  .event_type = if .level == "ERROR" { "error" } else if .level == "WARN" { "warning" } else { "info" }
+  .component = .metadata.component_name ?? "unknown"
+  .message = .message
+  .severity = if .level == "ERROR" { "high" } else if .level == "WARN" { "medium" } else { "low" }
+  .metadata = {
+    "level": .level,
+    "component_type": .metadata.component_type,
+    "component_id": .metadata.component_id
+  }
+  .tags = {
+    "host": .host ?? get_hostname!(),
+    "vector_version": "0.35.0"
+  }
+'''
+
+# Transform internal metrics to SED events (for critical thresholds)
+[transforms.sed_format_metrics]
+type = "remap"
+inputs = ["internal_metrics"]
+source = '''
+  # Only send metrics that indicate problems
+  if .name == "component_errors_total" && .counter.value > 0 {
+    .source_system = "vector"
+    .event_type = "error"
+    .component = .tags.component_name ?? "unknown"
+    .message = "Component error count: " + to_string(.counter.value)
+    .severity = "high"
+    .metadata = {
+      "error_count": .counter.value,
+      "component_type": .tags.component_type
+    }
+  } else if .name == "buffer_events" && .gauge.value > 1000 {
+    .source_system = "vector"
+    .event_type = "warning"
+    .component = .tags.component_name ?? "unknown"
+    .message = "High buffer usage: " + to_string(.gauge.value) + " events"
+    .severity = "medium"
+    .metadata = {
+      "buffer_events": .gauge.value,
+      "buffer_usage": (.gauge.value / 10000.0) * 100.0
+    }
+  } else {
+    abort
+  }
+'''
+
+# Send formatted events to SED webhook
+[sinks.sed_webhook]
+type = "http"
+inputs = ["sed_format_logs", "sed_format_metrics"]
+uri = "http://localhost:8000/api/v1/events/webhook"
+encoding.codec = "json"
+batch.max_events = 10
+batch.timeout_secs = 5
+request.headers.Content-Type = "application/json"
+
+# Optional: Also log to console for debugging
+[sinks.console_debug]
+type = "console"
+inputs = ["sed_format_logs"]
+encoding.codec = "json"
